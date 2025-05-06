@@ -10,6 +10,12 @@ import {
   Select,
   InputLabel,
   FormControl,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TableContainer,
 } from '@mui/material';
 import axios from 'axios';
 
@@ -19,12 +25,14 @@ const BASE_URL = `https://v6.exchangerate-api.com/v6/${API_KEY}/latest/USD`;
 const Home = () => {
   const [amount, setAmount] = useState(100000);
   const [rate, setRate] = useState(8.5);
-  const [term, setTerm] = useState(5); // years
+  const [term, setTerm] = useState(5);
   const [emi, setEmi] = useState(null);
 
   const [currency, setCurrency] = useState('INR');
   const [exchangeRates, setExchangeRates] = useState({});
   const [lastUpdate, setLastUpdate] = useState('');
+
+  const [schedule, setSchedule] = useState([]);
 
   const calculateEMI = () => {
     const principal = parseFloat(amount);
@@ -36,6 +44,25 @@ const Home = () => {
       (Math.pow(1 + monthlyRate, months) - 1);
 
     setEmi(emiCalc.toFixed(2));
+
+    // Generate amortization schedule
+    let currentBalance = principal;
+    const scheduleArray = [];
+
+    for (let i = 1; i <= months; i++) {
+      const interestPayment = currentBalance * monthlyRate;
+      const principalPayment = emiCalc - interestPayment;
+      currentBalance -= principalPayment;
+
+      scheduleArray.push({
+        month: i,
+        principal: principalPayment,
+        interest: interestPayment,
+        balance: Math.max(currentBalance, 0),
+      });
+    }
+
+    setSchedule(scheduleArray);
   };
 
   const fetchExchangeRates = async () => {
@@ -52,7 +79,16 @@ const Home = () => {
     fetchExchangeRates();
   }, []);
 
+  const resetTable = () => {
+    setSchedule([]);
+    setEmi(null);
+  };
+
   const convertedEMI = emi && exchangeRates[currency] ? (emi * exchangeRates[currency]).toFixed(2) : null;
+
+  const currencyFormat = (value) => {
+    return value ? `${parseFloat(value).toFixed(2)} ${currency}` : '';
+  };
 
   return (
     <Container maxWidth="md" sx={{ mt: 5 }}>
@@ -69,7 +105,6 @@ const Home = () => {
               onChange={(e) => setAmount(e.target.value)}
             />
           </Grid>
-
           <Grid item xs={12} md={4}>
             <TextField
               label="Interest Rate (%)"
@@ -79,7 +114,6 @@ const Home = () => {
               onChange={(e) => setRate(e.target.value)}
             />
           </Grid>
-
           <Grid item xs={12} md={4}>
             <TextField
               label="Term (Years)"
@@ -123,7 +157,7 @@ const Home = () => {
 
             {convertedEMI && (
               <Typography sx={{ mt: 2 }}>
-                EMI in {currency}: {convertedEMI} {currency}
+                EMI in {currency}: {currencyFormat(convertedEMI)}
               </Typography>
             )}
 
@@ -132,7 +166,44 @@ const Home = () => {
                 Last Updated: {lastUpdate}
               </Typography>
             )}
+
+            <Button
+              variant="outlined"
+              color="secondary"
+              sx={{ mt: 2 }}
+              onClick={resetTable}
+            >
+              RESET TABLE
+            </Button>
           </>
+        )}
+
+        {schedule.length > 0 && (
+          <TableContainer sx={{ mt: 4, maxHeight: 400 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Amortization Schedule ({currency})
+            </Typography>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Month</TableCell>
+                  <TableCell>Principal</TableCell>
+                  <TableCell>Interest</TableCell>
+                  <TableCell>Remaining Balance</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {schedule.map((row) => (
+                  <TableRow key={row.month}>
+                    <TableCell>{row.month}</TableCell>
+                    <TableCell>{currencyFormat(row.principal * exchangeRates[currency])}</TableCell>
+                    <TableCell>{currencyFormat(row.interest * exchangeRates[currency])}</TableCell>
+                    <TableCell>{currencyFormat(row.balance * exchangeRates[currency])}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
       </Paper>
     </Container>
