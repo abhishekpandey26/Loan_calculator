@@ -137,8 +137,8 @@ const Home = () => {
         {emi && (
           <>
             <Typography variant="h6" sx={{ mt: 3 }}>
-              Monthly EMI: ${emi} USD
-            </Typography>
+  Monthly EMI: {convertedEMI ? currencyFormat(convertedEMI) : `${emi} USD`}
+</Typography>
 
             <FormControl sx={{ mt: 2, minWidth: 120 }}>
               <InputLabel>Currency</InputLabel>
