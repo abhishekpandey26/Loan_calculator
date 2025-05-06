@@ -45,7 +45,7 @@ const Home = () => {
 
     setEmi(emiCalc.toFixed(2));
 
-    // Generate amortization schedule
+    
     let currentBalance = principal;
     const scheduleArray = [];
 

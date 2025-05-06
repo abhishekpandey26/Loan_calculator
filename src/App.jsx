@@ -6,9 +6,9 @@ import { CssBaseline } from "@mui/material";
 import Home from "./pages/Home.jsx";
 import About from "./pages/About.jsx";
 import ExchangeRates from "./pages/ExchangeRates.jsx";
-import NotFound from "./pages/NotFound.jsx"; // ✅ Correct import
+import NotFound from "./pages/NotFound.jsx"; 
 import Navbar from "./components/Navbar.jsx";
-import ErrorPage from "./components/ErrorPage.jsx"; // ✅ Correct import
+import ErrorPage from "./components/ErrorPage.jsx"; 
 import { useGlobalContext } from "./context/GlobalContext.jsx";
 
 function App() {

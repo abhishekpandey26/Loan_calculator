@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 
-// 🔐 Use API key from .env file
+
 const API_KEY = import.meta.env.VITE_EXCHANGE_API_KEY;
 
 const BASE_URL = `https://v6.exchangerate-api.com/v6/${API_KEY}/latest/USD`;
@@ -47,7 +47,7 @@ const Home = () => {
 
     setEmi(emiCalc.toFixed(2));
 
-    // Generate amortization schedule
+   
     let currentBalance = principal;
     const scheduleArray = [];
 
