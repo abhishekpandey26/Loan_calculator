@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   TextField,
@@ -6,116 +6,133 @@ import {
   Button,
   Paper,
   Grid,
-  Divider,
-} from "@mui/material";
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+} from '@mui/material';
+import axios from 'axios';
+
+const API_KEY = 'd141121b6801c605333d84a1';
+const BASE_URL = `https://v6.exchangerate-api.com/v6/${API_KEY}/latest/USD`;
 
 const Home = () => {
-  const [amount, setAmount] = useState("");
-  const [rate, setRate] = useState("");
-  const [tenure, setTenure] = useState("");
+  const [amount, setAmount] = useState(100000);
+  const [rate, setRate] = useState(8.5);
+  const [term, setTerm] = useState(5); // years
   const [emi, setEmi] = useState(null);
-  const [totalInterest, setTotalInterest] = useState(null);
-  const [totalPayment, setTotalPayment] = useState(null);
+
+  const [currency, setCurrency] = useState('INR');
+  const [exchangeRates, setExchangeRates] = useState({});
+  const [lastUpdate, setLastUpdate] = useState('');
 
   const calculateEMI = () => {
     const principal = parseFloat(amount);
-    const annualRate = parseFloat(rate);
-    const months = parseInt(tenure);
+    const monthlyRate = parseFloat(rate) / 12 / 100;
+    const months = parseInt(term) * 12;
 
-    if (!principal || !annualRate || !months) {
-      alert("Please enter valid inputs");
-      return;
-    }
-
-    const monthlyRate = annualRate / 12 / 100;
     const emiCalc =
       (principal * monthlyRate * Math.pow(1 + monthlyRate, months)) /
       (Math.pow(1 + monthlyRate, months) - 1);
-    const totalPay = emiCalc * months;
-    const totalInt = totalPay - principal;
 
     setEmi(emiCalc.toFixed(2));
-    setTotalInterest(totalInt.toFixed(2));
-    setTotalPayment(totalPay.toFixed(2));
   };
 
-  const resetCalculator = () => {
-    setAmount("");
-    setRate("");
-    setTenure("");
-    setEmi(null);
-    setTotalInterest(null);
-    setTotalPayment(null);
+  const fetchExchangeRates = async () => {
+    try {
+      const res = await axios.get(BASE_URL);
+      setExchangeRates(res.data.conversion_rates);
+      setLastUpdate(res.data.time_last_update_utc);
+    } catch (error) {
+      console.error('Error fetching exchange rates:', error);
+    }
   };
+
+  useEffect(() => {
+    fetchExchangeRates();
+  }, []);
+
+  const convertedEMI = emi && exchangeRates[currency] ? (emi * exchangeRates[currency]).toFixed(2) : null;
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 5 }}>
+    <Container maxWidth="md" sx={{ mt: 5 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
-        <Typography variant="h4" gutterBottom align="center">
-          Loan EMI Calculator
-        </Typography>
-        <Divider sx={{ mb: 3 }} />
+        <Typography variant="h4" gutterBottom>Loan Calculator Dashboard</Typography>
+
         <Grid container spacing={2}>
-          <Grid item xs={12}>
+          <Grid item xs={12} md={4}>
             <TextField
               label="Loan Amount"
               type="number"
+              fullWidth
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              fullWidth
-              variant="outlined"
             />
           </Grid>
-          <Grid item xs={12}>
+
+          <Grid item xs={12} md={4}>
             <TextField
               label="Interest Rate (%)"
               type="number"
+              fullWidth
               value={rate}
               onChange={(e) => setRate(e.target.value)}
-              fullWidth
-              variant="outlined"
             />
           </Grid>
-          <Grid item xs={12}>
+
+          <Grid item xs={12} md={4}>
             <TextField
-              label="Tenure (months)"
+              label="Term (Years)"
               type="number"
-              value={tenure}
-              onChange={(e) => setTenure(e.target.value)}
               fullWidth
-              variant="outlined"
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
             />
-          </Grid>
-          <Grid item xs={12} textAlign="center">
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={calculateEMI}
-              sx={{ mr: 2 }}
-            >
-              Calculate
-            </Button>
-            <Button
-              variant="outlined"
-              color="secondary"
-              onClick={resetCalculator}
-            >
-              Reset
-            </Button>
           </Grid>
         </Grid>
+
+        <Button
+          variant="contained"
+          color="primary"
+          sx={{ mt: 3 }}
+          onClick={calculateEMI}
+        >
+          CALCULATE
+        </Button>
+
         {emi && (
-          <Paper elevation={2} sx={{ mt: 4, p: 2, textAlign: "center" }}>
-            <Typography variant="h6" gutterBottom>
-              Monthly EMI: ₹{emi}
+          <>
+            <Typography variant="h6" sx={{ mt: 3 }}>
+              Monthly EMI: ${emi} USD
             </Typography>
-            <Typography variant="body1" gutterBottom>
-              Total Interest: ₹{totalInterest}
-            </Typography>
-            <Typography variant="body1">
-              Total Payment: ₹{totalPayment}
-            </Typography>
-          </Paper>
+
+            <FormControl sx={{ mt: 2, minWidth: 120 }}>
+              <InputLabel>Currency</InputLabel>
+              <Select
+                value={currency}
+                label="Currency"
+                onChange={(e) => setCurrency(e.target.value)}
+              >
+                {Object.keys(exchangeRates).map((cur) => (
+                  <MenuItem key={cur} value={cur}>
+                    {cur}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {convertedEMI && (
+              <Typography sx={{ mt: 2 }}>
+                EMI in {currency}: {convertedEMI} {currency}
+              </Typography>
+            )}
+
+            {lastUpdate && (
+              <Typography variant="caption" display="block" sx={{ mt: 2 }}>
+                Last Updated: {lastUpdate}
+              </Typography>
+            )}
+          </>
         )}
       </Paper>
     </Container>
