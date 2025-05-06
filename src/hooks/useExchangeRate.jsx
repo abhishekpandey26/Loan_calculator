@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import axios from 'axios';
-import { useGlobalContext } from '../context/GlobalContext.jsx';
+import { useGlobalContext } from '../context/GlobalContext';
 
-const API_KEY = 'YOUR_API_KEY';
+const API_KEY = 'd141121b6801c605333d84a1';
 const BASE_URL = `https://v6.exchangerate-api.com/v6/${API_KEY}/latest/USD`;
 
 export const useExchangeRate = () => {
